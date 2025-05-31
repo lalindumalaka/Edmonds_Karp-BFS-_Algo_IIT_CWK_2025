@@ -1,63 +1,51 @@
-
 import algorithm.Algorithm;
 import algorithm.MaxFlow;
 import network.Network;
-import network.Edge;
 import parser.NetworkParser;
 
-
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-
+import java.io.PrintWriter;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            String folderPath = "input/"; // Folder containing all input files (.txt)
 
-            File folder = new File(folderPath);
-            File[] listOfFiles = folder.listFiles();
+            String filePath = "input/1input.txt";
 
-            if (listOfFiles == null || listOfFiles.length == 0) {
-                System.out.println("No input files found in the directory.");
-                return;
+            System.out.println("\n====================================");
+            System.out.println("Processing file: " + new File(filePath).getName());
+            System.out.println("====================================");
+
+            // Parse the network
+            Network network = NetworkParser.parseFromFile(filePath);
+            int source = 0;
+            int sink = network.size() - 1;
+            MaxFlow algorithm = new Algorithm();
+
+            // Measure execution time
+            long startTime = System.nanoTime();
+            int maxFlow = algorithm.findMaxFlow(network, source, sink);
+            long endTime = System.nanoTime();
+            double elapsedTimeMs = (endTime - startTime) / 1_000_000.0; // Converting to milliseconds
+
+            // Print summary to console
+            System.out.println("\n====================================");
+            System.out.printf("File: %-15s | Max Flow: %-7d | Time: %.2f ms%n",
+                    new File(filePath).getName(), maxFlow, elapsedTimeMs);
+            System.out.println("====================================\n");
+
+            // Saving summary to file "summary.txt"
+            try (PrintWriter summaryWriter = new PrintWriter(new FileWriter("summary.txt", true))) {
+                summaryWriter.printf("File: %-15s | Max Flow: %-7d | Time: %.2f ms%n",
+                        new File(filePath).getName(), maxFlow, elapsedTimeMs);
             }
 
-            for (File file : listOfFiles) {
-                if (file.isFile() && file.getName().endsWith(".txt")) {
-                    System.out.println("\n--------------------------------------------");
-                    System.out.println("Processing file: " + file.getName());
+            System.out.println("Summary saved to summary.txt.");
 
-                    // Parse the network
-                    Network network = NetworkParser.parseFromFile(file.getAbsolutePath());
-                    int source = 0;
-                    int sink = network.size() - 1;
-
-                    MaxFlow algorithm = new Algorithm();
-
-                    // Measure execution time
-                    long startTime = System.nanoTime();
-                    int maxFlow = algorithm.findMaxFlow(network, source, sink);
-                    long endTime = System.nanoTime();
-
-                    double elapsedTimeMs = (endTime - startTime) / 1_000_000.0; // Convert nanoseconds to milliseconds
-
-                    // Print results
-                    System.out.printf("File: %-20s | Max Flow: %-8d | Time: %.2f ms%n",
-                            file.getName(), maxFlow, elapsedTimeMs);
-
-                    System.out.println("Final flow network:");
-                    for (var edges : network.getGraph()) {
-                        for (Edge e : edges) {
-                            if (e.capacity > 0) { // Only show original forward edges
-                                System.out.println(e);
-                            }
-                        }
-                    }
-                }
-            }
         } catch (IOException e) {
-            System.err.println("Error reading input files: " + e.getMessage());
+            System.err.println("Error reading input file or writing summary: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Unexpected Error: " + e.getMessage());
         }
